@@ -1,13 +1,11 @@
 exports.seed = async function (knex) {
-  // This seed runs on every deploy (see backend startCommand). Skip re-seeding if
-  // products already exist so plain DELETE+INSERT doesn't keep bumping the
-  // auto-increment id sequence on every redeploy and orphaning past orders'
-  // product_id references. Delete the tables manually first if you ever need
-  // to force a full reseed.
-  const existingCount = await knex('products').count('id as count').first();
-  if (existingCount && Number(existingCount.count) > 0) {
-    return;
-  }
+  // This seed runs on every deploy (see backend startCommand) so that menu/price
+  // edits made here take effect automatically. TRUNCATE ... RESTART IDENTITY wipes
+  // both tables AND resets their auto-increment counters back to 1 in the same
+  // step, so as long as the list below stays in the same order, every redeploy
+  // re-creates the same rows with the same ids — instead of plain DELETE+INSERT,
+  // which left old rows' ids behind and made ids drift higher on every deploy.
+  await knex.raw('TRUNCATE TABLE products, categories RESTART IDENTITY CASCADE');
 
   const [juices, shots, bowls] = await knex('categories')
     .insert([
