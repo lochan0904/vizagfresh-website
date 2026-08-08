@@ -13,7 +13,8 @@ function Menu() {
       .getProducts()
       .then((data) => {
         if (!cancelled) {
-          setProducts(data.products);
+          const list = Array.isArray(data && data.products) ? data.products : [];
+          setProducts(list);
           setStatus('ready');
         }
       })
@@ -26,12 +27,20 @@ function Menu() {
   }, []);
 
   const categories = useMemo(() => {
-    const map = new Map();
-    products.forEach((p) => map.set(p.category_slug, p.category_name));
-    return Array.from(map, ([slug, name]) => ({ slug, name }));
+    const seenSlugs = {};
+    const list = [];
+    for (let i = 0; i < products.length; i += 1) {
+      const p = products[i];
+      if (p && p.category_slug && !seenSlugs[p.category_slug]) {
+        seenSlugs[p.category_slug] = true;
+        list.push({ slug: p.category_slug, name: p.category_name });
+      }
+    }
+    return list;
   }, [products]);
 
-  const filtered = category === 'all' ? products : products.filter((p) => p.category_slug === category);
+  const filtered =
+    category === 'all' ? products : products.filter((p) => p && p.category_slug === category);
 
   return (
     <section className="section">
@@ -76,9 +85,11 @@ function Menu() {
 
         {status === 'ready' && (
           <div className="menu-grid">
-            {filtered.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
+            {filtered
+              .filter((product) => !!product)
+              .map((product) => (
+                <ProductCard key={product.id || product.slug} product={product} />
+              ))}
           </div>
         )}
       </div>
