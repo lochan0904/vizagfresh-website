@@ -1,0 +1,53 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: vizagfresh
+      POSTGRES_PASSWORD: vizagfresh
+      POSTGRES_DB: vizagfresh
+    ports:
+      - "5432:5432"
+    volumes:
+      - vizagfresh_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vizagfresh"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PORT: 4000
+      NODE_ENV: production
+      DATABASE_URL: postgres://vizagfresh:vizagfresh@postgres:5432/vizagfresh
+      CLIENT_ORIGIN: http://localhost:5173
+      JWT_SECRET: ${JWT_SECRET:-dev-only-change-me}
+      JWT_EXPIRES_IN: 12h
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@vizagfresh.in}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-ChangeMe123!}
+      WHATSAPP_NUMBER: ${WHATSAPP_NUMBER:-919999999999}
+    ports:
+      - "4000:4000"
+    command: sh -c "npx knex --knexfile src/db/knexfile.js migrate:latest && npx knex --knexfile src/db/knexfile.js seed:run && node src/server.js"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: http://localhost:4000/api
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"
+
+volumes:
+  vizagfresh_pgdata:
