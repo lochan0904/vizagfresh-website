@@ -1,6 +1,13 @@
 exports.seed = async function (knex) {
-  await knex('products').del();
-  await knex('categories').del();
+  // This seed runs on every deploy (see backend startCommand). Skip re-seeding if
+  // products already exist so plain DELETE+INSERT doesn't keep bumping the
+  // auto-increment id sequence on every redeploy and orphaning past orders'
+  // product_id references. Delete the tables manually first if you ever need
+  // to force a full reseed.
+  const existingCount = await knex('products').count('id as count').first();
+  if (existingCount && Number(existingCount.count) > 0) {
+    return;
+  }
 
   const [juices, shots, bowls] = await knex('categories')
     .insert([
