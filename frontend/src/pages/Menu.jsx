@@ -51,6 +51,9 @@ function Menu() {
           <p className="section-sub center">
             A short, focused menu so every bottle is fresh, consistent, and pressed the same morning you drink it.
           </p>
+          <span className="hero-badge" style={{ display: 'inline-flex', marginBottom: 28 }}>
+            🛵 Coming soon on Swiggy &amp; Zomato
+          </span>
         </div>
 
         {status === 'error' && (
